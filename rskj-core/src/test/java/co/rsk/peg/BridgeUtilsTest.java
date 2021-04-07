@@ -111,8 +111,8 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsLock() {
-        // Lock is for the genesis federation ATM
+    public void testIsPegInTx() {
+        // Peg-in is for the genesis federation ATM
         NetworkParameters params = RegTestParams.get();
         Context btcContext = new Context(params);
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
@@ -121,14 +121,14 @@ public class BridgeUtilsTest {
         Address federationAddress = federation.getAddress();
         wallet.addWatchedAddress(federationAddress, federation.getCreationTime().toEpochMilli());
 
-        // Tx sending less than the minimum allowed, not a lock tx
+        // Tx sending less than the minimum allowed, not a peg-in tx
         Coin minimumLockValue = bridgeConstants.getMinimumLockTxValue();
         BtcTransaction tx = new BtcTransaction(params);
         tx.addOutput(minimumLockValue.subtract(Coin.CENT), federationAddress);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertFalse(BridgeUtils.isPegInTx(tx, federation, btcContext, bridgeConstants));
 
-        // Tx sending 1 btc to the federation, but also spending from the federation addres, the typical release tx, not a lock tx.
+        // Tx sending 1 btc to the federation, but also spending from the federation addres, the typical release tx, not a peg-in tx.
         BtcTransaction tx2 = new BtcTransaction(params);
         tx2.addOutput(Coin.COIN, federationAddress);
         TransactionInput txIn = new TransactionInput(params, tx2, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
@@ -136,13 +136,13 @@ public class BridgeUtilsTest {
         signWithNecessaryKeys(bridgeConstants.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx2, bridgeConstants);
         assertFalse(BridgeUtils.isPegInTx(tx2, federation, btcContext, bridgeConstants));
 
-        // Tx sending 1 btc to the federation, is a lock tx
+        // Tx sending 1 btc to the federation, is a peg-in tx
         BtcTransaction tx3 = new BtcTransaction(params);
         tx3.addOutput(Coin.COIN, federationAddress);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(BridgeUtils.isPegInTx(tx3, federation, btcContext, bridgeConstants));
 
-        // Tx sending 50 btc to the federation, is a lock tx
+        // Tx sending 50 btc to the federation, is a peg-in tx
         BtcTransaction tx4 = new BtcTransaction(params);
         tx4.addOutput(Coin.FIFTY_COINS, federationAddress);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
@@ -150,7 +150,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsLockForTwoFederations() {
+    public void testIsPegInTxForTwoFederations() {
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         NetworkParameters parameters = bridgeConstants.getBtcParams();
         Context btcContext = new Context(parameters);
@@ -173,26 +173,26 @@ public class BridgeUtilsTest {
 
         List<Federation> federations = Arrays.asList(federation1, federation2);
 
-        // Tx sending less than 1 btc to the first federation, not a lock tx
+        // Tx sending less than 1 btc to the first federation, not a peg-in tx
         BtcTransaction tx = new BtcTransaction(parameters);
         tx.addOutput(Coin.CENT, address1);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertFalse(BridgeUtils.isPegInTx(tx, federations, null, btcContext, bridgeConstants));
 
-        // Tx sending less than 1 btc to the second federation, not a lock tx
+        // Tx sending less than 1 btc to the second federation, not a peg-in tx
         tx = new BtcTransaction(parameters);
         tx.addOutput(Coin.CENT, address2);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertFalse(BridgeUtils.isPegInTx(tx, federations, null, btcContext, bridgeConstants));
 
-        // Tx sending less than 1 btc to both federations, not a lock tx
+        // Tx sending less than 1 btc to both federations, not a peg-in tx
         tx = new BtcTransaction(parameters);
         tx.addOutput(Coin.CENT, address1);
         tx.addOutput(Coin.CENT, address2);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertFalse(BridgeUtils.isPegInTx(tx, federations, null, btcContext, bridgeConstants));
 
-        // Tx sending 1 btc to the first federation, but also spending from the first federation address, the typical release tx, not a lock tx.
+        // Tx sending 1 btc to the first federation, but also spending from the first federation address, the typical release tx, not a peg-in tx.
         BtcTransaction tx2 = new BtcTransaction(parameters);
         tx2.addOutput(Coin.COIN, address1);
         TransactionInput txIn = new TransactionInput(parameters, tx2, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
@@ -200,7 +200,7 @@ public class BridgeUtilsTest {
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2, bridgeConstants);
         assertFalse(BridgeUtils.isPegInTx(tx2, federations, null, btcContext, bridgeConstants));
 
-        // Tx sending 1 btc to the second federation, but also spending from the second federation address, the typical release tx, not a lock tx.
+        // Tx sending 1 btc to the second federation, but also spending from the second federation address, the typical release tx, not a peg-in tx.
         tx2 = new BtcTransaction(parameters);
         tx2.addOutput(Coin.COIN, address2);
         txIn = new TransactionInput(parameters, tx2, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
@@ -208,7 +208,7 @@ public class BridgeUtilsTest {
         signWithNecessaryKeys(federation2, federation2Keys, txIn, tx2, bridgeConstants);
         assertFalse(BridgeUtils.isPegInTx(tx2, federations, null, btcContext, bridgeConstants));
 
-        // Tx sending 1 btc to both federations, but also spending from the first federation address, the typical release tx, not a lock tx.
+        // Tx sending 1 btc to both federations, but also spending from the first federation address, the typical release tx, not a peg-in tx.
         tx2 = new BtcTransaction(parameters);
         tx2.addOutput(Coin.COIN, address1);
         tx2.addOutput(Coin.COIN, address2);
@@ -217,7 +217,7 @@ public class BridgeUtilsTest {
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2, bridgeConstants);
         assertFalse(BridgeUtils.isPegInTx(tx2, federations, null, btcContext, bridgeConstants));
 
-        // Tx sending 1 btc to both federations, but also spending from the second federation address, the typical release tx, not a lock tx.
+        // Tx sending 1 btc to both federations, but also spending from the second federation address, the typical release tx, not a peg-in tx.
         tx2 = new BtcTransaction(parameters);
         tx2.addOutput(Coin.COIN, address1);
         tx2.addOutput(Coin.COIN, address2);
@@ -226,7 +226,7 @@ public class BridgeUtilsTest {
         signWithNecessaryKeys(federation2, federation2Keys, txIn, tx2, bridgeConstants);
         assertFalse(BridgeUtils.isPegInTx(tx2, federations, null, btcContext, bridgeConstants));
 
-        // Tx sending 1 btc from federation1 to federation2, the typical migration tx, not a lock tx.
+        // Tx sending 1 btc from federation1 to federation2, the typical migration tx, not a peg-in tx.
         tx2 = new BtcTransaction(parameters);
         tx2.addOutput(Coin.COIN, address2);
         txIn = new TransactionInput(parameters, tx2, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
@@ -234,7 +234,7 @@ public class BridgeUtilsTest {
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2, bridgeConstants);
         assertFalse(BridgeUtils.isPegInTx(tx2, federations, null, btcContext, bridgeConstants));
 
-        // Tx sending 1 btc from federation1 to federation2, the typical migration tx from the retired federation, not a lock tx.
+        // Tx sending 1 btc from federation1 to federation2, the typical migration tx from the retired federation, not a peg-in tx.
         tx2 = new BtcTransaction(parameters);
         tx2.addOutput(Coin.COIN, address2);
         txIn = new TransactionInput(parameters, tx2, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
@@ -242,38 +242,38 @@ public class BridgeUtilsTest {
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2, bridgeConstants);
         assertFalse(BridgeUtils.isPegInTx(tx2, Collections.singletonList(federation2), federation1.getP2SHScript(), btcContext, bridgeConstants));
 
-        // Tx sending 1 btc to the first federation, is a lock tx
+        // Tx sending 1 btc to the first federation, is a peg-in tx
         BtcTransaction tx3 = new BtcTransaction(parameters);
         tx3.addOutput(Coin.COIN, address1);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(BridgeUtils.isPegInTx(tx3, federations, null, btcContext, bridgeConstants));
 
-        // Tx sending 1 btc to the second federation, is a lock tx
+        // Tx sending 1 btc to the second federation, is a peg-in tx
         tx3 = new BtcTransaction(parameters);
         tx3.addOutput(Coin.COIN, address2);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(BridgeUtils.isPegInTx(tx3, federations, null, btcContext, bridgeConstants));
 
-        // Tx sending 1 btc to the both federations, is a lock tx
+        // Tx sending 1 btc to the both federations, is a peg-in tx
         tx3 = new BtcTransaction(parameters);
         tx3.addOutput(Coin.COIN, address1);
         tx3.addOutput(Coin.COIN, address2);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(BridgeUtils.isPegInTx(tx3, federations, null, btcContext, bridgeConstants));
 
-        // Tx sending 50 btc to the first federation, is a lock tx
+        // Tx sending 50 btc to the first federation, is a peg-in tx
         BtcTransaction tx4 = new BtcTransaction(parameters);
         tx4.addOutput(Coin.FIFTY_COINS, address1);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(BridgeUtils.isPegInTx(tx4, federations, null, btcContext, bridgeConstants));
 
-        // Tx sending 50 btc to the second federation, is a lock tx
+        // Tx sending 50 btc to the second federation, is a peg-in tx
         tx4 = new BtcTransaction(parameters);
         tx4.addOutput(Coin.FIFTY_COINS, address2);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(BridgeUtils.isPegInTx(tx4, federations, null, btcContext, bridgeConstants));
 
-        // Tx sending 50 btc to the both federations, is a lock tx
+        // Tx sending 50 btc to the both federations, is a peg-in tx
         tx4 = new BtcTransaction(parameters);
         tx4.addOutput(Coin.FIFTY_COINS, address1);
         tx4.addOutput(Coin.FIFTY_COINS, address2);
@@ -634,7 +634,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsRelease() {
+    public void testIsPegOutTx() {
         NetworkParameters params = RegTestParams.get();
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         Federation federation = bridgeConstants.getGenesisFederation();
@@ -642,30 +642,45 @@ public class BridgeUtilsTest {
                 BtcECKey.fromPrivate(Hex.decode("fa01")),
                 BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        Federation federation2 = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys), Instant.ofEpochMilli(2000L), 2L, bridgeConstants.getBtcParams());
+        Federation federation2 = new Federation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+            Instant.ofEpochMilli(2000L),
+            2L,
+            bridgeConstants.getBtcParams()
+        );
         List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
         Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
 
-        BtcTransaction releaseTx1 = new BtcTransaction(params);
-        releaseTx1.addOutput(Coin.COIN, randomAddress);
-        TransactionInput releaseInput1 = new TransactionInput(params, releaseTx1, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
-        releaseTx1.addInput(releaseInput1);
-        signWithNecessaryKeys(federation, federationPrivateKeys, releaseInput1, releaseTx1, bridgeConstants);
+        BtcTransaction pegOutTx1 = new BtcTransaction(params);
+        pegOutTx1.addOutput(Coin.COIN, randomAddress);
+        TransactionInput pegOutInput1 = new TransactionInput(
+            params,
+            pegOutTx1,
+            new byte[]{},
+            new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH)
+        );
+        pegOutTx1.addInput(pegOutInput1);
+        signWithNecessaryKeys(federation, federationPrivateKeys, pegOutInput1, pegOutTx1, bridgeConstants);
 
-        assertThat(BridgeUtils.isPegOutTx(releaseTx1, Collections.singletonList(federation)), is(true));
-        assertThat(BridgeUtils.isPegOutTx(releaseTx1, Arrays.asList(federation, federation2)), is(true));
-        assertThat(BridgeUtils.isPegOutTx(releaseTx1, Collections.singletonList(federation2)), is(false));
+        assertThat(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(federation)), is(true));
+        assertThat(BridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(federation, federation2)), is(true));
+        assertThat(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(federation2)), is(false));
 
-        assertThat(BridgeUtils.isPegOutTx(releaseTx1, federation.getP2SHScript()), is(true));
-        assertThat(BridgeUtils.isPegOutTx(releaseTx1, federation.getP2SHScript(), federation2.getP2SHScript()), is(true));
-        assertThat(BridgeUtils.isPegOutTx(releaseTx1, federation2.getP2SHScript()), is(false));
+        assertThat(BridgeUtils.isPegOutTx(pegOutTx1, federation.getP2SHScript()), is(true));
+        assertThat(BridgeUtils.isPegOutTx(pegOutTx1, federation.getP2SHScript(), federation2.getP2SHScript()), is(true));
+        assertThat(BridgeUtils.isPegOutTx(pegOutTx1, federation2.getP2SHScript()), is(false));
 
-        BtcTransaction releaseTx2 = new BtcTransaction(params);
-        releaseTx2.addOutput(Coin.COIN, randomAddress);
-        TransactionInput releaseInput2 = new TransactionInput(params, releaseTx2, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
-        releaseTx2.addInput(releaseInput2);
-        signWithNKeys(federation, federationPrivateKeys, releaseInput2, releaseTx2, bridgeConstants, 1);
-        assertThat(BridgeUtils.isPegOutTx(releaseTx2, Collections.singletonList(federation)), is(false));
+        BtcTransaction pegOutTx2 = new BtcTransaction(params);
+        pegOutTx2.addOutput(Coin.COIN, randomAddress);
+        TransactionInput pegOutInput2 = new TransactionInput(
+            params,
+            pegOutTx2,
+            new byte[]{},
+            new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH)
+        );
+        pegOutTx2.addInput(pegOutInput2);
+        signWithNKeys(federation, federationPrivateKeys, pegOutInput2, pegOutTx2, bridgeConstants, 1);
+        assertThat(BridgeUtils.isPegOutTx(pegOutTx2, Collections.singletonList(federation)), is(false));
     }
 
     @Test
@@ -699,14 +714,19 @@ public class BridgeUtilsTest {
 
         List<Federation> federations = Arrays.asList(federation1, federation2);
 
-        BtcTransaction releaseWithChange = new BtcTransaction(params);
-        releaseWithChange.addOutput(Coin.COIN, randomAddress);
-        releaseWithChange.addOutput(Coin.COIN, federation2Address);
-        TransactionInput releaseFromFederation2 = new TransactionInput(params, releaseWithChange, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
-        releaseWithChange.addInput(releaseFromFederation2);
-        signWithNecessaryKeys(federation2, federation2Keys, releaseFromFederation2, releaseWithChange, bridgeConstants);
-        assertThat(BridgeUtils.isPegInTx(releaseWithChange, federations, null, btcContext, bridgeConstants), is(false));
-        assertThat(BridgeUtils.isPegOutTx(releaseWithChange, federations), is(true));
+        BtcTransaction pegOutWithChange = new BtcTransaction(params);
+        pegOutWithChange.addOutput(Coin.COIN, randomAddress);
+        pegOutWithChange.addOutput(Coin.COIN, federation2Address);
+        TransactionInput pegOutFromFederation2 = new TransactionInput(
+            params,
+            pegOutWithChange,
+            new byte[]{},
+            new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH)
+        );
+        pegOutWithChange.addInput(pegOutFromFederation2);
+        signWithNecessaryKeys(federation2, federation2Keys, pegOutFromFederation2, pegOutWithChange, bridgeConstants);
+        assertThat(BridgeUtils.isPegInTx(pegOutWithChange, federations, null, btcContext, bridgeConstants), is(false));
+        assertThat(BridgeUtils.isPegOutTx(pegOutWithChange, federations), is(true));
     }
 
     @Test
