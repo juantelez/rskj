@@ -151,8 +151,13 @@ public class BridgeUtils {
      * @param bridgeConstants the Bridge constants
      * @return true if this is a valid lock transaction
      */
-    public static boolean isPegInTx(BtcTransaction tx, List<Federation> activeFederations, Script retiredFederationP2SHScript,
-                                    Context btcContext, BridgeConstants bridgeConstants) {
+    public static boolean isPegInTx(
+        BtcTransaction tx,
+        List<Federation> activeFederations,
+        Script retiredFederationP2SHScript,
+        Context btcContext,
+        BridgeConstants bridgeConstants) {
+
         // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
         // optionally sending some change to any of the federation addresses)
         for (int i = 0; i < tx.getInputs().size(); i++) {
@@ -163,6 +168,17 @@ public class BridgeUtils {
 
             if (retiredFederationP2SHScript != null && scriptCorrectlySpendsTx(tx, index, retiredFederationP2SHScript)) {
                 return false;
+            }
+
+            RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(tx.getInput(index).getScriptSig().getChunks());
+            try {
+                // The registered utxo could be change from an utxo spent from a fast bridge federation
+                Script inputStandardRedeemScript = redeemScriptParser.extractStandardRedeemScript();
+                if (activeFederations.stream().anyMatch(federation -> federation.getStandardRedeemScript().equals(inputStandardRedeemScript))) {
+                    return false;
+                }
+            } catch (ScriptException e) {
+                // There is no redeem script, could be a peg-in from a P2PKH address
             }
         }
 
