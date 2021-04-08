@@ -40,7 +40,8 @@ public class BridgeConstants {
 
     protected Coin minimumPeginTxValue;
     protected Coin minimumPeginTxValueAfterIris;
-    protected Coin minimumReleaseTxValue;
+    protected Coin minimumPegoutTxValue;
+    protected Coin minimumPegoutTxValueAfterIris;
 
     protected long federationActivationAge;
 
@@ -105,7 +106,9 @@ public class BridgeConstants {
 
     public Coin getMinimumPeginTxValueAfterIris() { return minimumPeginTxValueAfterIris; }
 
-    public Coin getMinimumReleaseTxValue() { return minimumReleaseTxValue; }
+    public Coin getMinimumPegoutTxValue() { return minimumPegoutTxValue; }
+
+    public Coin getMinimumPegoutTxValueAfterIrisTxValue() { return minimumPegoutTxValueAfterIris; }
 
     public long getFederationActivationAge() { return federationActivationAge; }
 

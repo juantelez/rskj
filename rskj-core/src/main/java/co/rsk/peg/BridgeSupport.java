@@ -99,6 +99,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -818,7 +819,8 @@ public class BridgeSupport {
      * @throws IOException
      */
     private boolean requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
-        if (!value.isGreaterThan(bridgeConstants.getMinimumReleaseTxValue())) {
+        Coin minimumPegoutTxValue = activations.isActive(RSKIP219) ? bridgeConstants.getMinimumPegoutTxValueAfterIrisTxValue() : bridgeConstants.getMinimumPegoutTxValue();
+        if (!value.isGreaterThan(minimumPegoutTxValue)) {
             return false;
         }
 

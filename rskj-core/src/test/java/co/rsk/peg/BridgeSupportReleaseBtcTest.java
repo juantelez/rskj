@@ -323,6 +323,67 @@ public class BridgeSupportReleaseBtcTest {
         }
     }
 
+    @Test
+    public void release_before_rskip_219() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
+        when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+
+        List<LogInfo> logInfo = new ArrayList<>();
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo));
+        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+
+        Coin middle = bridgeConstants.getMinimumPegoutTxValue().subtract(bridgeConstants.getMinimumPegoutTxValueAfterIrisTxValue()).div(2);
+        Coin value = bridgeConstants.getMinimumPegoutTxValueAfterIrisTxValue().add(middle);
+        assertTrue(value.isLessThan(bridgeConstants.getMinimumPegoutTxValue()));
+        assertTrue(value.isGreaterThan(bridgeConstants.getMinimumPegoutTxValueAfterIrisTxValue()));
+        bridgeSupport.releaseBtc(buildReleaseRskTx(value));
+
+        Transaction rskTx = buildUpdateTx();
+        rskTx.sign(SENDER.getPrivKeyBytes());
+        bridgeSupport.updateCollections(rskTx);
+
+        verify(repository, never()).transfer(any(), any(), any());
+
+        assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet().getEntries().toArray()[0];
+
+        assertEquals(3, logInfo.size());
+        verify(eventLogger,times(1)).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
+        verify(eventLogger,times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger,times(1)).logUpdateCollections(any());
+    }
+
+    @Test
+    public void release_after_rskip_219() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
+        when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(false);
+
+        List<LogInfo> logInfo = new ArrayList<>();
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo));
+        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+
+        Coin middle = bridgeConstants.getMinimumPegoutTxValue().subtract(bridgeConstants.getMinimumPegoutTxValueAfterIrisTxValue()).div(2);
+        Coin value = bridgeConstants.getMinimumPegoutTxValueAfterIrisTxValue().add(middle);
+        assertTrue(value.isLessThan(bridgeConstants.getMinimumPegoutTxValue()));
+        assertTrue(value.isGreaterThan(bridgeConstants.getMinimumPegoutTxValueAfterIrisTxValue()));
+        bridgeSupport.releaseBtc(buildReleaseRskTx(value));
+
+        Transaction rskTx = buildUpdateTx();
+        rskTx.sign(SENDER.getPrivKeyBytes());
+        bridgeSupport.updateCollections(rskTx);
+
+        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+
+        assertEquals(2, logInfo.size());
+        verify(eventLogger,never()).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
+        verify(eventLogger,never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
+    }
+
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/
@@ -333,6 +394,10 @@ public class BridgeSupportReleaseBtcTest {
 
     private Transaction buildReleaseRskTx() {
         return buildReleaseRskTx(Coin.COIN);
+    }
+
+    private Transaction buildReleaseRskTxRskip219(Coin value) {
+        return buildReleaseRskTx(value);
     }
 
     private Transaction buildReleaseRskTx(Coin coin) {

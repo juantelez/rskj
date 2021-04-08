@@ -68,8 +68,10 @@ public class BridgeDevNetConstants extends BridgeConstants {
         maxBtcHeadersPerRskBlock = 500;
 
         minimumPeginTxValue = Coin.valueOf(1000000);
-        minimumReleaseTxValue = Coin.valueOf(500000);
+        minimumPegoutTxValue = Coin.valueOf(500000);
         minimumPeginTxValueAfterIris = Coin.valueOf(500000);
+        minimumPegoutTxValueAfterIris = Coin.valueOf(250000);
+
 
         // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'
         List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
