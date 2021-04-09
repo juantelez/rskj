@@ -338,7 +338,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             // allows for non-local calls
             if (activations.isActive(ConsensusRule.RSKIP88) &&
                 !isLocalCall() &&
-                bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls(this, activations, bridgeParsedData.args)) {
+                bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls(this, bridgeParsedData.args)) {
 
                 String errorMessage = String.format("Non-local-call to %s. Returning without execution.", bridgeParsedData.bridgeMethod.getFunction().name);
                 logger.info(errorMessage);
